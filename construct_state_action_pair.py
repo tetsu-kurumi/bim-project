@@ -3,7 +3,7 @@ import yaml
 import sys
 
 def extract_joint_positions(yaml_text_file):
-    joint_position_dict = []
+    joint_position_dict = {}
     with open (yaml_text_file, 'r') as yaml_text:
         data_list = list(yaml.safe_load_all(yaml_text))
 
@@ -24,21 +24,21 @@ def extract_joint_positions(yaml_text_file):
     return joint_position_dict
 
 def extract_head_positions(yaml_text_file):
-    head_position_dict = []
+    head_position_dict = {}
     with open (yaml_text_file, 'r') as yaml_text:
         data_list = list(yaml.safe_load_all(yaml_text))
         for data in data_list:
             if data is not None:
-                if data['id'] == 116:
-                    secs = data['header']['stamp']['secs']
-                    x = data['pose']['position']['x']
-                    y = data['pose']['position']['y']
-                    z = data['pose']['position']['z']
-                    transformed_x, transformed_y, transformed_z = transform(x, y, z)
-                    # x_orientation = ['pose']['orientation']['x']
-                    # y_orientation = ['pose']['orientation']['x']
-                    # z_orientation = ['pose']['orientation']['x']
-                    head_position_dict[secs] = (transformed_x, transformed_y, transformed_z)
+                head_data = data['markers'][16]
+                secs = head_data['header']['stamp']['secs']
+                x = head_data['pose']['position']['x']
+                y = head_data['pose']['position']['y']
+                z = head_data['pose']['position']['z']
+                transformed_x, transformed_y, transformed_z = transform(x, y, z)
+                # x_orientation = ['pose']['orientation']['x']
+                # y_orientation = ['pose']['orientation']['x']
+                # z_orientation = ['pose']['orientation']['x']
+                head_position_dict[secs] = (transformed_x, transformed_y, transformed_z)
     return head_position_dict
 
 def transform(x, y, z):
@@ -49,9 +49,9 @@ def construct_state_action_pair(joint_positions_yaml, head_positions_yaml, outpu
     joint_position_dict = extract_joint_positions(joint_positions_yaml)
     head_position_dict = extract_head_positions(head_positions_yaml)
 
-    for secs, joint_position in joint_position_dict:
+    for secs, joint_position in joint_position_dict.items():
         if secs in head_position_dict:
-            head_position = head_position_dict["secs"]
+            head_position = head_position_dict[secs]
             if int(secs)+1 in joint_position_dict:
                 next_joint_position = joint_position_dict[secs+1]
                 with open(output_json, 'a') as json_file:
