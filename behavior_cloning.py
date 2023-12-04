@@ -1,4 +1,3 @@
-import train_utils as util
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
@@ -8,6 +7,51 @@ import keras
 import argparse
 import os
 import sys
+import json
+
+def load_data(input_file):
+    """
+    Load training data from disk
+    :param input_file: path to input file
+    :return: NxF features matrix (state), and Nx2 target values (action)
+    """
+
+    target_frame = None
+    head_x = []
+    head_y = []
+    head_z = []
+    joint_1 = []
+    joint_2 = []
+    joint_3 = []
+    joint_4 = []
+    action_1 = []
+    action_2 = []
+    action_3 = []
+    action_4 = []
+    
+    with open(input_file, 'r') as file:
+            # Load the JSON data from the file
+            data_list = [json.loads(line) for line in file]
+            # Iterate through the data
+            for entry in data_list:
+                assert len(entry) == 12, "Expected each line to have 12 elements."
+
+                head_x.append(float(entry[ "head_position_x"]))
+                head_y.append(float(entry[ "head_position_y"]))
+                head_z.append(float(entry[ "head_position_z"]))
+                joint_1.append(float(entry[ "joint_1"]))
+                joint_2.append(float(entry[ "joint_2"]))
+                joint_3.append(float(entry[ "joint_3"]))
+                joint_4.append(float(entry[ "joint_4"]))
+                action_1.append(float(entry[ "next_joint_1"]))
+                action_2.append(float(entry[ "next_joint_2"]))
+                action_3.append(float(entry[ "next_joint_3"]))
+                action_4.append(float(entry[ "next_joint_4"]))
+
+    features = np.column_stack((head_x, head_y, head_z, joint_1, joint_2, joint_3, joint_4))
+    targets = np.column_stack((action_1, action_2, action_3, action_4))
+
+    return features, targets
 
 def compute_normalization_parameters(data):
     """
@@ -118,7 +162,7 @@ def train_model(model, train_input, train_target, val_input, val_target, input_m
              callbacks=[tbCallBack, checkpointCallBack])
     
     # Save model
-    model.save("/home/tk655/catkin_ws/src/bim-final-project/imitation_learning_models/model", overwrite=True, save_format = 'h5')
+    model.save("/Users/tetsu/Documents/School/Class/CPSC459/bim-project/imitation_learning_models", overwrite=True, save_format = 'h5')
 
 def validate_model(model, features_val, targets_val):
     validation_loss = model.evaluate(features_val, targets_val)
@@ -147,7 +191,7 @@ if __name__ == "__main__":
 
     # Check file exists and load data
     if os.path.exists(file_path):
-        features, targets = util.load_data(args.path)
+        features, targets = load_data(args.path)
     else:
         print(f"The file at {file_path} does not exist.")
         sys.exit(1)

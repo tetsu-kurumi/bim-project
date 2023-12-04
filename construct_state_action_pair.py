@@ -49,16 +49,16 @@ def construct_state_action_pair(joint_positions_yaml, head_positions_yaml, outpu
     joint_position_dict = extract_joint_positions(joint_positions_yaml)
     head_position_dict = extract_head_positions(head_positions_yaml)
 
-    for secs, joint_position in joint_position_dict.items():
-        if secs in head_position_dict:
-            head_position = head_position_dict[secs]
-            if int(secs)+1 in joint_position_dict:
-                next_joint_position = joint_position_dict[secs+1]
-                with open(output_json, 'a') as json_file:
+    with open(output_json, 'a') as json_file:
+        json_file.seek(0, 2)
+        for secs, joint_position in joint_position_dict.items():
+            if secs in head_position_dict:
+                head_position = head_position_dict[secs]
+                if int(secs)+1 in joint_position_dict:
+                    next_joint_position = joint_position_dict[secs+1]
                     data_to_write = {"secs": secs, "head_position_x": head_position[0], "head_position_y": head_position[1], "head_position_z": head_position[2],
                                     "joint_1": joint_position[0], "joint_2": joint_position[1], "joint_3": joint_position[2], "joint_4": joint_position[3], 
                                     "next_joint_1": next_joint_position[0], "next_joint_2": next_joint_position[1], "next_joint_3": next_joint_position[2], "next_joint_4": next_joint_position[3]}
-                    json_file.seek(0, 2)
                     json_file.write(json.dumps(data_to_write) + '\n')
 
 
