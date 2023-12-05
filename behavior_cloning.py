@@ -93,19 +93,35 @@ def normalize_data_per_row(data, mean, stdev):
 
 def build_model(input_shape):
     # Build a simple neural network model
+    """
     model = keras.Sequential([
-        keras.layers.Dense(256, activation='relu', input_shape=(input_shape,)),
-        keras.layers.Dense(256, activation='relu'),
+        keras.layers.Dense(1024, activation='relu', input_shape=(input_shape,)),
+        keras.layers.Dense(512, activation='relu'),
         keras.layers.Dense(64, activation='softmax'),
         keras.layers.Dense(4)  # Output layer with 2 units for action_1 and action_3
     ])
+    # Validation Loss: [0.024688730016350746, 0.10686945170164108]
+    
+    
+    # LSTM model
+    model = keras.Sequential([
+         keras.layers.LSTM(50, activation='relu', input_shape=(1, 7)),
+         keras.layers.Dense(64, activation='softmax'),
+         keras.layers.Dense(4)
+    ])
+    # Validation Loss: [0.018657149747014046, 0.08205969631671906]
+    """
+    # LSTM model2
+    model = keras.Sequential([
+        keras.layers.Dense(64, activation='relu', input_shape=(1, 7)),
+        keras.layers.Dense(32, activation='relu'),
+        keras.layers.LSTM(32, activation='relu'),
+        keras.layers.Dense(4)
+    ])
+    # Validation Loss: [0.017765656113624573, 0.07670820504426956]
     return model
 
-    # epochs = 1000, learning_rate = 0.0001, batch_size = 50
-    # Validation Loss: [0.0014541357522830367, 0.0036746326368302107]
-
-    # epochs = 100, learning_rate = 0.001, batch_size = 20
-    # [0.0013743388699367642, 0.008348226547241211]
+    
 
 
     # model = keras.Sequential([
@@ -115,7 +131,6 @@ def build_model(input_shape):
     # ])
     # return model
 
-    # Validation Loss: [0.0014071406330913305, 0.012224048376083374]
 
 
 def train_model(model, train_input, train_target, val_input, val_target, input_mean, input_stdev,
@@ -144,7 +159,7 @@ def train_model(model, train_input, train_target, val_input, val_target, input_m
                  metrics=['mae'])
         
     # tensorboard callback
-    logs_dir = 'imitation_learning_logs/log_{}'.format(datetime.datetime.now().strftime("%m-%d-%Y-%H-%M"))
+    logs_dir = '/Users/tetsu/Documents/School/Class/CPSC459/bim-project/imitation_learning_logs/log_{}'.format(datetime.datetime.now().strftime("%m-%d-%Y-%H-%M"))
     tbCallBack = tf.keras.callbacks.TensorBoard(log_dir=logs_dir, write_graph=True)
 
     # save checkpoint callback
@@ -162,7 +177,8 @@ def train_model(model, train_input, train_target, val_input, val_target, input_m
              callbacks=[tbCallBack, checkpointCallBack])
     
     # Save model
-    model.save("/Users/tetsu/Documents/School/Class/CPSC459/bim-project/imitation_learning_models", overwrite=True, save_format = 'h5')
+    
+    model.save("/Users/tetsu/Documents/School/Class/CPSC459/bim-project/imitation_learning_models/model", overwrite=True, save_format = 'h5')
 
 def validate_model(model, features_val, targets_val):
     validation_loss = model.evaluate(features_val, targets_val)
@@ -174,24 +190,29 @@ def predict(model, features_val, targets_val):
     predictions = model.predict(features_val)
 
     # Plot and compare predictions with true targets
-    plt.scatter(targets_val[:, 0], targets_val[:, 1], label='True Actions')
+    plt.scatter(targets_val[:, 0], targets_val[:, 1],label='True Actions')
     plt.scatter(predictions[:, 0], predictions[:, 1], label='Predicted Actions')
+    
     plt.legend()
     plt.xlabel('Action 1')
-    plt.ylabel('Action 3')
+    plt.ylabel('Action 2')
+
+    plt.scatter(targets_val[:, 2], targets_val[:, 3], label='True Actions')
+    plt.scatter(predictions[:, 2], predictions[:, 3], label='Predicted Actions')
+    
+    plt.legend()
+    plt.xlabel('Action 3')
+    plt.ylabel('Action 4')
     plt.show()
 
 if __name__ == "__main__":
 
     # Handling command line arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument("path", help="path to training data", type=str)
-    args = parser.parse_args()
-    file_path = args.path
+    file_path = "/Users/tetsu/Documents/School/Class/CPSC459/bim-project/output.json"
 
     # Check file exists and load data
     if os.path.exists(file_path):
-        features, targets = load_data(args.path)
+        features, targets = load_data(file_path)
     else:
         print(f"The file at {file_path} does not exist.")
         sys.exit(1)
@@ -200,6 +221,8 @@ if __name__ == "__main__":
     features_train, features_val, targets_train, targets_val = train_test_split(
         features, targets, test_size=0.2, random_state=42)
 
+    features_train = np.reshape(features_train, (features_train.shape[0], 1, features_train.shape[1]))
+    features_val = np.reshape(features_val, (features_val.shape[0], 1, features_val.shape[1]))
     # Build model
     model = build_model(features_train.shape[1])
 
@@ -208,7 +231,7 @@ if __name__ == "__main__":
 
     # Train model
     train_model(model, features_train, targets_train, features_val, targets_val, 
-                input_mean, input_stdev, epochs = 1000, learning_rate = 0.0001, batch_size = 50)
+                input_mean, input_stdev, epochs = 1000, learning_rate = 0.0001, batch_size = 100)
 
     # Validate model
     validate_model(model, features_val, targets_val)
