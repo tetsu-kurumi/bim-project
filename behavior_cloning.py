@@ -93,16 +93,16 @@ def normalize_data_per_row(data, mean, stdev):
 
 def build_model(input_shape):
     # Build a simple neural network model
-    """
+    
     model = keras.Sequential([
-        keras.layers.Dense(1024, activation='relu', input_shape=(input_shape,)),
-        keras.layers.Dense(512, activation='relu'),
-        keras.layers.Dense(64, activation='softmax'),
+        keras.layers.Dense(64, activation='relu', input_shape=(input_shape,)),
+        keras.layers.Dense(32, activation='relu'),
+        keras.layers.Dense(16, activation='relu'),
         keras.layers.Dense(4)  # Output layer with 2 units for action_1 and action_3
     ])
-    # Validation Loss: [0.024688730016350746, 0.10686945170164108]
+    # Validation Loss: [0.017627805471420288, 0.07829522341489792]
     
-    
+    """
     # LSTM model
     model = keras.Sequential([
          keras.layers.LSTM(50, activation='relu', input_shape=(1, 7)),
@@ -111,7 +111,8 @@ def build_model(input_shape):
     ])
     # Validation Loss: [0.018657149747014046, 0.08205969631671906]
     """
-    # LSTM model2
+    """
+    # LSTM model2: Best model so far
     model = keras.Sequential([
         keras.layers.Dense(64, activation='relu', input_shape=(1, 7)),
         keras.layers.Dense(32, activation='relu'),
@@ -119,6 +120,7 @@ def build_model(input_shape):
         keras.layers.Dense(4)
     ])
     # Validation Loss: [0.017765656113624573, 0.07670820504426956]
+    """
     return model
 
     
@@ -189,6 +191,7 @@ def predict(model, features_val, targets_val):
     # Make predictions on the validation data
     predictions = model.predict(features_val)
 
+    
     # Plot and compare predictions with true targets
     plt.scatter(targets_val[:, 0], targets_val[:, 1],label='True Actions')
     plt.scatter(predictions[:, 0], predictions[:, 1], label='Predicted Actions')
@@ -196,7 +199,8 @@ def predict(model, features_val, targets_val):
     plt.legend()
     plt.xlabel('Action 1')
     plt.ylabel('Action 2')
-
+    plt.show()
+    
     plt.scatter(targets_val[:, 2], targets_val[:, 3], label='True Actions')
     plt.scatter(predictions[:, 2], predictions[:, 3], label='Predicted Actions')
     
@@ -221,8 +225,8 @@ if __name__ == "__main__":
     features_train, features_val, targets_train, targets_val = train_test_split(
         features, targets, test_size=0.2, random_state=42)
 
-    features_train = np.reshape(features_train, (features_train.shape[0], 1, features_train.shape[1]))
-    features_val = np.reshape(features_val, (features_val.shape[0], 1, features_val.shape[1]))
+    # features_train = np.reshape(features_train, (features_train.shape[0], 1, features_train.shape[1]))
+    # features_val = np.reshape(features_val, (features_val.shape[0], 1, features_val.shape[1]))
     # Build model
     model = build_model(features_train.shape[1])
 
